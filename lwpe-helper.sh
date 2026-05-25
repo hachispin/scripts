@@ -67,7 +67,8 @@ if ! [[ -d $wpe ]]; then
 fi
 
 # NOTE: you can set these if you want to skip prompts
-lwpe_bin='/home/rain/linux-wallpaperengine/build/output/linux-wallpaperengine'
+#       also these won't be the same for your system
+lwpe_bin='/home/rain/projects/linux-wallpaperengine/build/output/linux-wallpaperengine'
 monitor='eDP-1'
 
 if cmd_exists 'linux-wallpaperengine'; then
