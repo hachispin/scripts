@@ -21,9 +21,6 @@ done
 
 # Returns the accent color in hexadecimal.
 #
-# If `kreadconfig6` succeeds but returns nothing,
-# this instead returns the current keyboard color.
-#
 # Example output: ffffff
 get_accent_hex() {
 	color=$(kreadconfig6 --file kdeglobals --group General --key AccentColor)
