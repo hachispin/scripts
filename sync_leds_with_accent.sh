@@ -21,15 +21,17 @@ done
 
 # Returns the accent color in hexadecimal.
 #
+# If `kreadconfig6` succeeds but returns nothing,
+# this instead returns the current keyboard color.
+#
 # Example output: ffffff
 get_accent_hex() {
 	color=$(kreadconfig6 --file kdeglobals --group General --key AccentColor)
 
 	if [[ -z $color ]]; then
-		echo 'ERROR: no accent color found in kdeglobals!' >&2
-		echo 'This may be because your accent colour is set to "from colour scheme".' >&2
-		echo 'To fix this, change it to anything else (e.g., "from wallpaper").' >&2
-		exit 1
+		# Refer to NOTE(1) if you're seeing this.
+		echo 'WARNING: no accent color found in kdeglobals' >&2
+		return 1
 	fi
 
 	IFS=, read -r r g b <<<"$color"
@@ -70,18 +72,16 @@ set_colors() {
 	asusctl leds set "$level"
 }
 
-last_accent="$(get_accent_hex)"
-set_colors "$last_accent"
+if last_accent="$(get_accent_hex)"; then
+	set_colors "$last_accent"
+fi
 
 # Don't watch the file (kdeglobals) itself because of renames.
 while read -r _dir _event file; do
-	if [[ $file == 'kdeglobals' ]]; then
-		accent="$(get_accent_hex)"
+	[[ $file != 'kdeglobals' ]] && continue
+	! accent="$(get_accent_hex)" && continue
+	[[ $accent == "$last_accent" ]] && continue
 
-		# Only call set_colors() when the color changes.
-		if [[ $accent != "$last_accent" ]]; then
-			set_colors "$accent"
-			last_accent="$accent"
-		fi
-	fi
+	set_colors "$accent"
+	last_accent="$accent"
 done < <(inotifywait -m -e close_write,moved_to ~/.config 2>/dev/null)
