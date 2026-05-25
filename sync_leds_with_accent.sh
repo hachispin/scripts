@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# This script is meant to be used with the "Accent colour from wallpaper"
-# option toggled (in the Colours section), but still works regardless.
+# NOTE(1): This won't work if your accent colour is set to "from colour scheme".
 #
-# NOTE: Your Logitech keyboard profiles (profile 0) will be changed!
+# NOTE(2): Profile 0 in your Logitech keyboard will be modified. This should
+# only touch keyboard lighting and not other properties (such as custom keys).
 
 keyboard='Logitech G915 WIRELESS RGB MECHANICAL GAMING KEYBOARD'
 
@@ -24,6 +24,14 @@ done
 # Example output: ffffff
 get_accent_hex() {
 	color=$(kreadconfig6 --file kdeglobals --group General --key AccentColor)
+
+	if [[ -z $color ]]; then
+		echo 'ERROR: no accent color found in kdeglobals!' >&2
+		echo 'This may be because your accent colour is set to "from colour scheme".' >&2
+		echo 'To fix this, change it to anything else (e.g., "from wallpaper").' >&2
+		exit 1
+	fi
+
 	IFS=, read -r r g b <<<"$color"
 	printf '%02x%02x%02x' "$r" "$g" "$b"
 }
@@ -35,8 +43,11 @@ set_colors() {
 	if ratbagctl "$keyboard" profile 0 get &>/dev/null; then
 		ratbagctl "$keyboard" profile 0 led 0 set color "$1" # Logo
 		ratbagctl "$keyboard" profile 0 led 1 set color "$1" # Keys
+		# Sometimes LEDs turn off for some reason.
+		ratbagctl "$keyboard" profile 0 led 0 set mode on
+		ratbagctl "$keyboard" profile 0 led 1 set mode on
 	else
-		echo "Failed to get profile 0; assuming keyboard is disconnected" >&2
+		echo "Failed to get profile 0; assuming $keyboard is disconnected" >&2
 	fi
 
 	# Setting color seems to reset brightness to "high"
