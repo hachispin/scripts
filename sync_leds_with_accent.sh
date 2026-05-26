@@ -5,6 +5,8 @@
 # NOTE(2): Profile 0 in your Logitech keyboard will be modified. This should
 # only touch keyboard lighting and not other properties (such as custom keys).
 
+set -euo pipefail
+
 keyboard='Logitech G915 WIRELESS RGB MECHANICAL GAMING KEYBOARD'
 
 if [[ $XDG_CURRENT_DESKTOP != 'KDE' ]]; then
