@@ -25,10 +25,13 @@ done
 #
 # Example output: ffffff
 get_accent_hex() {
+	local color
 	color=$(kreadconfig6 --file kdeglobals --group General --key AccentColor)
 
 	if [[ -z $color ]]; then
 		# Refer to NOTE(1) if you're seeing this.
+		#
+		# This can also show up for certain wallpapers if they're too dark.
 		echo 'WARNING: no accent color found in kdeglobals' >&2
 		return 1
 	fi
@@ -53,6 +56,7 @@ set_colors() {
 
 	# Setting color seems to reset brightness to "high"
 	# so this respects the previous brightness level.
+	local level
 	level=$(asusctl leds get | cut -c34-)
 	level=${level,,}
 
@@ -71,9 +75,7 @@ set_colors() {
 	asusctl leds set "$level"
 }
 
-if last_accent="$(get_accent_hex)"; then
-	set_colors "$last_accent"
-fi
+last_accent="$(get_accent_hex)" && set_colors "$last_accent"
 
 # Don't watch the file (kdeglobals) itself because of renames.
 while read -r _dir _event file; do
