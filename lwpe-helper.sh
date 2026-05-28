@@ -1,124 +1,107 @@
 #!/usr/bin/env bash
 
-# sort of improper
 set -euo pipefail
 
+# Path to linux-wallpaperengine executable.
+lwpe_bin=''
+
+# Monitor name to apply wallpaper to. Leave it blank if you
+# want to open a window with the wallpaper applied instead.
+#
+# Run `xrandr --listactivemonitors` to find monitor names.
+monitor=''
+
+# Steam installation, which is used to find wallpaper IDs.
+#
+# Leave this blank unless you encounter errors (e.g., if
+# you have steam installed somewhere non-conventional).
+steam=''
+
+# Echoes to stderr.
+#
+# $1: message
 err() {
 	echo "${1:-}" >&2
 }
 
-cmd_exists() {
-	command -v "$1" &>/dev/null
-}
-
-# prompts typically go to stderr
+# Confirmation prompt.
+#
+# $1: prompt
+# $2: default response ('y' or 'n')
 confirm() {
-	read -p "$1 [y/N] " -n 1 -r >&2
-	err
-	if ! [[ $REPLY =~ ^[Yy]$ ]]; then
-		exit 0
+	local prompt="$1"
+	local default="${2:-n}"
+
+	if [[ "$default" =~ ^[Yy]$ ]]; then
+		printf '%s [Y/n] ' "$prompt" >&2
+		read -rn 1
+		[[ -z "$REPLY" || "$REPLY" =~ ^[Yy]$ ]] || exit 0
+	else
+		printf '%s [y/N] ' "$prompt" >&2
+		read -rn 1
+		[[ "$REPLY" =~ ^[Yy]$ ]] || exit 0
 	fi
+
+	err
 }
 
-# solely comprised of 0-9 and not empty
+# Solely comprised of 0-9 and not empty.
+#
+# $1: string
 is_digit() {
 	[[ $1 =~ ^[0-9]+$ ]]
 }
 
+if ! command -v 'jq' &>/dev/null; then
+	err 'Required program jq not found. Install it using your system package manager.'
+	exit 127
+fi
+
 # pgrep is limited to 15 characters, though this is probably paranoid
 for pid in $(pgrep -x 'linux-wallpaper'); do
-	if [[ $(basename "$(readlink /proc/"$pid"/exe)") != 'linux-wallpaperengine' ]]; then
+	[[ $(basename "$(readlink /proc/"$pid"/exe)") != 'linux-wallpaperengine' ]] &&
 		continue
-	fi
 
 	err 'linux-wallpaperengine is already running!'
-	confirm 'do you want to close it?'
+	confirm 'Do you want to close it?' 'y'
 	kill "$pid"
 done
 
-# edit this if needed
-steam="$HOME/.steam/steam"
-
-# same fallback chain as linux-wallpaperengine when finding assets
+# Uses the same fallback chain as linux-wallpaperengine.
 for fallback in \
+	"$HOME/.steam/steam" \
 	"$HOME/.local/share/Steam" \
 	"$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam" \
 	"$HOME/snap/steam/common/.local/share/Steam"; do
 
-	if [[ -d $steam ]]; then
-		break
-	fi
-
+	[[ -d $steam ]] && break
 	steam=$fallback
 done
 
 if ! [[ -d $steam ]]; then
-	err "couldn't find steam in any of the expected locations"
-	err "please install steam or edit initial value of steam variable in $0"
+	err "Couldn't find steam in any of the expected locations."
+	err "Install Steam or, if it *is* installed, edit the steam variable in $0."
 	exit 1
 fi
 
 wpe="$steam/steamapps/workshop/content/431960"
 assets="$steam/steamapps/common/wallpaper_engine/assets"
 
-if ! [[ -d $wpe ]]; then
-	err "couldn't find wallpaper engine on steam, make sure it's installed"
+if ! [[ -d $wpe && -d $assets ]]; then
+	err "Couldn't find Wallpaper Engine on Steam, make sure it's installed."
 	exit 1
-fi
-
-# NOTE: you can either set these or leave them empty to get prompted at runtime
-lwpe_bin='/home/rain/projects/linux-wallpaperengine/build/output/linux-wallpaperengine'
-monitor='eDP-1'
-
-if cmd_exists 'linux-wallpaperengine'; then
-	lwpe_bin='linux-wallpaperengine'
-elif [[ -z $lwpe_bin ]]; then
-	path=
-	echo 'linux-wallpaperengine not found in PATH'
-	read -rp 'please enter the path to its binary: ' path
-	path="${path/#\~/$HOME}"
-	lwpe_bin=$(realpath "$path" 2>/dev/null)
-
-	# maybe use a loop. but that's annoying
-	if ! cmd_exists "$lwpe_bin"; then
-		echo "invalid path -- either doesn't exist or isn't an executable"
-		exit 127
-	fi
-else
-	lwpe_bin="${lwpe_bin/#\~/$HOME}"
-	if ! cmd_exists "$lwpe_bin"; then
-		echo "lwpe_bin is set to an invalid path"
-		exit 127
-	fi
-fi
-
-if ! cmd_exists 'jq'; then
-	err 'jq not found, please install using your package manager :)'
-	exit 127
-fi
-
-if [[ -z $monitor ]]; then
-	err 'monitor variable is unset, here are the list of active monitors:'
-	err
-	xrandr --listactivemonitors >&2
-	err
-	err 'make sure to enter name (on right-most column), not index'
-	read -rp 'choose one, or leave blank: ' monitor
 fi
 
 ids=()
 for path in "$wpe"/*; do
 	base=$(basename "$path")
-
-	if [[ -d $path ]] && is_digit "$base"; then
-		ids+=("$base")
-	fi
+	[[ -d $path ]] && is_digit "$base" && ids+=("$base")
 done
 
 num_ids=${#ids[@]}
 
 if ! ((num_ids)); then
-	err 'no wallpaper ids found, go install some!'
+	err 'No wallpaper IDs found, go install some!'
 	exit 1
 fi
 
@@ -133,17 +116,17 @@ done
 
 echo
 
-chosen_index=
+chosen_index=''
 while true; do
-	read -rp "choose an index: " chosen_index
+	read -rp "Choose an index: " chosen_index
 
 	if ! is_digit "$chosen_index"; then
-		err "invalid index: '$chosen_index' is not a (positive) integer"
+		err "Invalid index: '$chosen_index' is not a (positive) integer"
 		continue
 	fi
 
 	if ! ((chosen_index >= 0 && chosen_index < num_ids)); then
-		err "index ($chosen_index) out of bounds, must be in range 0-$((num_ids - 1))"
+		err "Index ($chosen_index) out of bounds, must be in range 0-$((num_ids - 1))"
 		continue
 	fi
 
@@ -154,16 +137,11 @@ chosen="${ids[$chosen_index]}"
 info="$wpe/$chosen/project.json"
 wp_type=$(jq -r '.type' "$info")
 
-if ! [[ ${wp_type,,} == "video" ]]; then
-	confirm "non-video wallpapers (type=$wp_type) can be unstable and cause crashes, continue?"
-fi
+[[ ${wp_type,,} == "video" ]] ||
+	confirm "Non-video wallpapers (type=$wp_type) can cause crashes, continue?" 'n'
 
-# scaling is set to fill as fit (the default) is a little buggy
-# add any options here
+# scaling is set to fill as fit (the default) is a little
+# buggy. you can also add/remove any options here
 prefix="$lwpe_bin --assets-dir $assets --scaling fill --disable-mouse"
-
-if [[ -n $monitor ]]; then
-	prefix="$prefix --screen-root $monitor"
-fi
-
-$prefix "$chosen" &
+[[ -n $monitor ]] && prefix="$prefix --screen-root $monitor"
+exec $prefix "$chosen"
