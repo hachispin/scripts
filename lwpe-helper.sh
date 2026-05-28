@@ -17,7 +17,7 @@ monitor='eDP-1'
 #
 # Leave this blank unless you encounter errors (e.g., if
 # you have steam installed somewhere non-conventional).
-steam=''
+steam=""
 
 # Echoes to stderr.
 #
@@ -57,6 +57,16 @@ is_digit() {
 if ! command -v 'jq' &>/dev/null; then
 	err 'Required program jq not found. Install it using your system package manager.'
 	exit 127
+fi
+
+if [[ -z $lwpe_bin ]]; then
+	err "lwpe_bin variable in $0 isn't set. Exiting"
+	exit 1
+fi
+
+if [[ -z $monitor ]]; then
+	err "monitor variable in $0 isn't set, wallpaper will be applied to a window instead"
+	err 'This may not be the desired behavior. If so, set it to the desired monitor.'
 fi
 
 # pgrep is limited to 15 characters, though this is probably paranoid
