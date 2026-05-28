@@ -2,14 +2,16 @@
 
 set -euo pipefail
 
-# Path to linux-wallpaperengine executable.
-lwpe_bin=''
+# Absolute path to linux-wallpaperengine executable.
+#
+# Note that tilde (~) doesn't expand here. Use $HOME instead.
+lwpe_bin="$HOME/projects/linux-wallpaperengine/build/output/linux-wallpaperengine"
 
 # Monitor name to apply wallpaper to. Leave it blank if you
 # want to open a window with the wallpaper applied instead.
 #
 # Run `xrandr --listactivemonitors` to find monitor names.
-monitor=''
+monitor='eDP-1'
 
 # Steam installation, which is used to find wallpaper IDs.
 #
@@ -144,4 +146,4 @@ wp_type=$(jq -r '.type' "$info")
 # buggy. you can also add/remove any options here
 prefix="$lwpe_bin --assets-dir $assets --scaling fill --disable-mouse"
 [[ -n $monitor ]] && prefix="$prefix --screen-root $monitor"
-exec $prefix "$chosen"
+$prefix "$chosen" >/tmp/lwpe-helper.log 2>&1 &
