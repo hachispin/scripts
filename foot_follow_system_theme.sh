@@ -25,4 +25,4 @@ case $global_theme in
 	;;
 esac
 
-foot --config="$config"
+exec foot --config="$config"
