@@ -37,11 +37,11 @@ confirm() {
 	if [[ "$default" =~ ^[Yy]$ ]]; then
 		printf '%s [Y/n] ' "$prompt" >&2
 		read -rn 1
-		[[ -z "$REPLY" || "$REPLY" =~ ^[Yy]$ ]] || exit 0
+		! [[ -z "$REPLY" || "$REPLY" =~ ^[Yy]$ ]] && exit 0
 	else
 		printf '%s [y/N] ' "$prompt" >&2
 		read -rn 1
-		[[ "$REPLY" =~ ^[Yy]$ ]] || exit 0
+		! [[ "$REPLY" =~ ^[Yy]$ ]] && exit 0
 	fi
 
 	err
@@ -148,12 +148,14 @@ done
 chosen="${ids[$chosen_index]}"
 info="$wpe/$chosen/project.json"
 wp_type=$(jq -r '.type' "$info")
+wp_type=${wp_type,,}
 
-[[ ${wp_type,,} == "video" ]] ||
+[[ $wp_type != "video" ]] &&
 	confirm "Non-video wallpapers (type=$wp_type) can cause crashes, continue?" 'n'
 
-# scaling is set to fill as fit (the default) is a little
-# buggy. you can also add/remove any options here
+# Scaling is set to "fill" as "fit" (the default) is a little buggy.
+# You can also add/remove any options here if needed.
+
 prefix="$lwpe_bin --assets-dir $assets --scaling fill --disable-mouse"
 [[ -n $monitor ]] && prefix="$prefix --screen-root $monitor"
 $prefix "$chosen" >/tmp/lwpe-helper.log 2>&1 &

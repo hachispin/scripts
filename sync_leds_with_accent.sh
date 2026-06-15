@@ -15,7 +15,7 @@ if [[ $XDG_CURRENT_DESKTOP != 'KDE' ]]; then
 fi
 
 for program in 'kreadconfig6' 'inotifywait' 'asusctl' 'ratbagctl'; do
-	if ! command -v "$program" &>/dev/null; then
+	if ! command -v $program &>/dev/null; then
 		echo "ERROR: $program is not installed and in PATH" >&2
 		exit 1
 	fi
