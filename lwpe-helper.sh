@@ -153,6 +153,11 @@ wp_type=${wp_type,,}
 [[ $wp_type != "video" ]] &&
 	confirm "Non-video wallpapers (type=$wp_type) can cause crashes, continue?" 'n'
 
+# I don't know how much of this pertains to Linux, but you never really know.
+# https://www.bleepingcomputer.com/news/security/steam-workshop-abused-to-spread-malware-via-wallpaper-engine-app/
+[[ $wp_type == "application" ]] &&
+	confirm 'WARNING: "application" wallpapers have the potential to be malicious, continue?' 'n'
+
 # Scaling is set to "fill" as "fit" (the default) is a little buggy.
 # You can also add/remove any options here if needed.
 
