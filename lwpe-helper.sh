@@ -5,7 +5,7 @@ set -euo pipefail
 # Absolute path to linux-wallpaperengine executable.
 #
 # Note that tilde (~) doesn't expand here. Use $HOME instead.
-lwpe_bin="$HOME/projects/linux-wallpaperengine/build/output/linux-wallpaperengine"
+lwpe_bin="$HOME/Projects/linux-wallpaperengine/build/output/linux-wallpaperengine"
 
 # Monitor name to apply wallpaper to. Leave it blank if you
 # want to open a window with the wallpaper applied instead.

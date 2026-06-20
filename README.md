@@ -12,7 +12,8 @@ Some scripts I've made.
   interactive cli for [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)
 
 - [sync_leds_with_accent](./sync_leds_with_accent.sh):
-  syncs KDE accent color with my keyboard backlights (ASUS, Logitech)
+  syncs KDE accent color with my keyboard backlights (ASUS, Logitech). KDE should have native
+  support for this (or through OpenRGB?) since 6.1 but I can't get it to work unfortunately.
 
 These scripts are heavily catered towards my system so you'll definitely need
 to change a few things (e.g., variables) to be able to reuse it on your setup.
